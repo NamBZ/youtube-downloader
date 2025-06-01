@@ -1,3 +1,5 @@
+This is forked from [Athlon1600/youtube-downloader](https://github.com/Athlon1600/youtube-downloader)
+
 # YouTube Downloader
 
 [![Build Status](https://github.com/ytdl-org/youtube-dl/workflows/CI/badge.svg)](https://github.com/ytdl-org/youtube-dl/actions?query=workflow%3ACI)
@@ -14,7 +16,8 @@ but most of them haven't been updated in years, or they depend on youtube-dl its
 
 Pure PHP-based youtube downloaders that work, and are **kept-up-to date** just do not exist.
 
-This script uses no Javascript interpreters, no calls to shell... nothing but pure PHP with no heavy dependencies either.
+*Up to v4.1.0,*  
+this script uses no Javascript interpreters, no calls to shell... nothing but pure PHP with no heavy dependencies either.
 
 ![](https://i.imgur.com/YT39KZ5.png)
 
@@ -32,8 +35,55 @@ We are not responsible for people who attempt to use this program in any way tha
 Recommended way of installing this is via [Composer](http://getcomposer.org):
 
 ```bash
-composer require athlon1600/youtube-downloader "^4.0"
+composer require kclauhk/youtube-downloader
 ```
+
+For pure PHP version:
+
+```bash
+composer require kclauhk/youtube-downloader "4.1.0"
+```
+
+## Changes in this fork
+
+### nsig decoding is supported
+[Deno](https://deno.com/) (an open-source JavaScript runtime) is required for nsig decoding.  
+To use this project with Deno, you can either
+- place the Deno executable into the folder "youtube-downloader/src"; or
+- specify the path of the folder containing Deno executable by  
+  `$youtube->getJsrt()->setPath('path of the folder');`
+
+Hence, "TVHTML5" client, which require nsig, is added. (client ID: "tv")  
+
+### player client can be added/modified
+You can add additional clients/modify the built-in clients by:  
+  `$youtube->getApiClients()->setClient($client_id, $client_data);`
+- `$client_id`   - ID of the client
+- `$client_data` - client data in array of key-value pairs which must contains "clientName" and "clientVersion",  
+  for example, adding "WEB_EMBEDDED_PLAYER":  
+  ```
+  $client = array(
+      'clientName' => 'WEB_EMBEDDED_PLAYER',
+      'clientVersion' => '1.20241201.00.00',
+  );
+  $youtube->getApiClients()->setClient('web_embedded', $client);
+  $downloadOptions = $youtube->getDownloadLinks($url, 'web_embedded');    // use 'web_embedded'
+  ```
+  (client which requires PO token is not supported)
+
+### Changes since [v4.1.0](https://github.com/kclauhk/youtube-downloader/releases/tag/v4.1.0)
+- Two YouTube clients (client ID: "android_vr" and "ios") are built into YouTubeDownloader
+  - To specify a client
+    ```
+    $downloadOptions = $youtube->getDownloadLinks($url, $client_id);
+    ```
+  - `$downloadOptions = $youtube->getDownloadLinks($url);` will use the default client "ios"
+- `StreamFormat` object now contains `audioTrack`, `indexRange` and `isDrc` properties
+- YouTubeStreamer accepts custom request headers (this can be used for streaming media from sources that require specific headers)
+  ```
+  $headers = array("origin: $origin", "referer: $referer");
+  $youtube->stream($url, $headers);
+  ```
 
 ## Example usage
 
@@ -92,7 +142,6 @@ $youtube = new YouTubeDownloader();
 $youtube->getBrowser()->consentCookies();
 ```
 
-
 ## How does it work
 
 A more detailed explanation on how to download videos from YouTube will be written soon.
@@ -110,9 +159,4 @@ https://github.com/Athlon1600/youtube-downloader/pull/25#issuecomment-439373506
 
 ## To-do list
 
-- Allow downloading of private videos.
-- Find a way to get around YouTube's throttling system that limits downloading speed to less than 100 kb/s for most most videos now...
-- Add ability to solve YouTube Captcha and avoid `HTTP 429 Too Many Requests` errors.
-- Add ability to download video and audio streams separately, and merge the two together using ffmpeg. Just like `youtube-dl` does!  
-- Optional command that finds ALL video formats.
-- ~~Fetch additional metadata about the video without using YouTube API.~~
+- 
