@@ -72,7 +72,7 @@ class PlayerApiClients
      * @param string $config_url    (optional) the URL of client config
      * @return boolean
      */
-    public function setClient(string $client_id, array $config_data, string $config_url = null): bool
+    public function setClient(string $client_id, array $config_data, ?string $config_url = null): bool
     {
         $has_name = array_key_exists('clientName', $config_data);
         $has_ver = array_key_exists('clientVersion', $config_data);
@@ -85,7 +85,7 @@ class PlayerApiClients
         static::$clients[$client_id] = ['context' => ['client' => $config_data]];
 
         if (!empty($config_url)) {
-            $url = filter_var($url, FILTER_SANITIZE_URL);
+            $url = filter_var($config_url, FILTER_SANITIZE_URL);
             if (filter_var($url, FILTER_VALIDATE_URL)) {
                 static::$clients[$client_id]['config_url'] = $url;
             }

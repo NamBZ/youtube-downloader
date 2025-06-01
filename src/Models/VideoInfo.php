@@ -15,6 +15,7 @@ class VideoInfo
 
     public ?string $title = null;
     public ?string $description = null;
+    public ?string $thumbnail = null;
     public ?\DateTime $uploadDate;
 
     public ?string $category;

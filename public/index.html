@@ -1,73 +1,718 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>youtube-downloader</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Downloader</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Plyr CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .gradient-bg {
+        background: linear-gradient(to right, #4f46e5, #3b82f6);
+      }
+      .loading {
+        border-top-color: #3b82f6;
+        animation: spinner 1s linear infinite;
+      }
+      @keyframes spinner {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <header class="gradient-bg text-white p-6 shadow-lg">
+      <div
+        class="container mx-auto flex flex-col md:flex-row justify-between items-center"
+      >
+        <h1 class="text-3xl font-bold mb-4 md:mb-0">YouTube Downloader</h1>
+        <nav>
+          <ul class="flex space-x-4">
+            <li>
+              <a href="#" class="hover:text-gray-200 transition"
+                ><i class="fas fa-home"></i> Home</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/NamBZ/youtube-downloader"
+                class="hover:text-gray-200 transition"
+                ><i class="fab fa-github"></i> GitHub</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
-<h1>YouTube Downloader</h1>
+    <main class="container mx-auto py-8 px-4">
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Download YouTube Videos</h2>
+        <p class="text-gray-600 mb-6">
+          Enter a YouTube URL to download videos and audio in various formats.
+          Our tool supports all YouTube video links.
+        </p>
 
-<p>
-    <a href="https://github.com/kclauhk/youtube-downloader">https://github.com/kclauhk/youtube-downloader</a>
-</p>
+        <form id="downloadForm" class="mb-6">
+          <div class="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              id="urlInput"
+              placeholder="https://www.youtube.com/watch?v=aqz-KE-bpKQ"
+              class="flex-1 border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              type="submit"
+              id="fetchBtn"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition duration-200"
+            >
+              <i class="fas fa-search mr-2"></i> Fetch Video
+            </button>
+          </div>
+        </form>
 
-<form>
-    <input type="text" value="https://www.youtube.com/watch?v=aqz-KE-bpKQ" size="80" id="txt_url">
-    <input type="button" id="btn_fetch" value="Fetch">
-</form>
+        <div class="text-sm text-gray-500">
+          <p class="font-medium mb-1">Supported URL formats:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>youtube.com/watch?v=...</li>
+            <li>youtu.be/...</li>
+            <li>youtube.com/embed/...</li>
+            <li>youtube-nocookie.com/embed/...</li>
+            <li>youtube.com/watch?feature=player_embedded&v=...</li>
+          </ul>
+        </div>
+      </div>
 
-<video width="800" height="600" controls>
-    <source src="" type="video/mp4"/>
-    <em>Sorry, your browser doesn't support HTML5 video.</em>
-</video>
+      <!-- Results Area -->
+      <div id="resultsArea" class="hidden">
+        <!-- Video Info -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="md:w-1/3">
+              <div
+                id="thumbnailContainer"
+                class="rounded-lg overflow-hidden mb-4"
+              ></div>
+            </div>
+            <div class="md:w-2/3">
+              <h3 id="videoTitle" class="text-2xl font-bold mb-2"></h3>
+              <div id="channelInfo" class="text-gray-600 mb-4"></div>
+              <div class="flex flex-wrap gap-3">
+                <button
+                  id="playVideoBtn"
+                  class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition"
+                >
+                  <i class="fas fa-play mr-2"></i> Play Video
+                </button>
+                <button
+                  id="playAudioBtn"
+                  class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition"
+                >
+                  <i class="fas fa-music mr-2"></i> Play Audio
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Player -->
+        <div
+          id="playerContainer"
+          class="bg-white rounded-lg shadow-md p-6 mb-8 hidden"
+        >
+          <div id="player" class="max-w-3xl mx-auto"></div>
+        </div>
 
-<script>
-    $(function () {
+        <!-- Download Links -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h3 class="text-xl font-semibold mb-4">Download Options</h3>
 
-        $("#btn_fetch").click(function () {
+          <!-- Video With Audio -->
+          <div id="videoWithAudioSection" class="mb-6">
+            <h4 class="text-lg font-medium mb-3 flex items-center">
+              <i class="fas fa-film text-blue-500 mr-2"></i> Video with Audio
+            </h4>
+            <div
+              id="videoWithAudio"
+              class="grid grid-cols-1 md:grid-cols-2 gap-3"
+            ></div>
+          </div>
 
-            var url = $("#txt_url").val();
+          <!-- Video Only -->
+          <div id="videoOnlySection" class="mb-6">
+            <h4 class="text-lg font-medium mb-3 flex items-center">
+              <i class="fas fa-video text-red-500 mr-2"></i> Video Only (No
+              Audio)
+            </h4>
+            <div
+              id="videoOnly"
+              class="grid grid-cols-1 md:grid-cols-2 gap-3"
+            ></div>
+          </div>
 
-            var oThis = $(this);
-            oThis.attr('disabled', true);
+          <!-- Audio Only -->
+          <div id="audioOnlySection" class="mb-6">
+            <h4 class="text-lg font-medium mb-3 flex items-center">
+              <i class="fas fa-headphones text-green-500 mr-2"></i> Audio Only
+            </h4>
+            <div
+              id="audioOnly"
+              class="grid grid-cols-1 md:grid-cols-2 gap-3"
+            ></div>
+          </div>
+        </div>
+      </div>
 
-            $.get('video_info.php', {url: url}, function (data) {
+      <!-- Loading Indicator -->
+      <div
+        id="loadingIndicator"
+        class="hidden bg-white rounded-lg shadow-md p-6 text-center"
+      >
+        <div
+          class="inline-block h-12 w-12 border-4 border-gray-200 rounded-full loading mb-4"
+        ></div>
+        <p class="text-gray-600">Fetching video information...</p>
+      </div>
 
-                console.log(data);
+      <!-- Error Message -->
+      <div
+        id="errorMessage"
+        class="hidden bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500"
+      >
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-medium text-red-800">Error</h3>
+            <p id="errorText" class="mt-1 text-red-700"></p>
+          </div>
+        </div>
+      </div>
+    </main>
 
-                oThis.attr('disabled', false);
+    <footer class="bg-gray-800 text-white py-8">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between">
+          <div class="mb-6 md:mb-0">
+            <h3 class="text-xl font-bold mb-4">YouTube Downloader</h3>
+            <p class="text-gray-400">
+              A free tool to download YouTube videos in various formats. No
+              registration required, simple and easy to use.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold mb-4">Links</h3>
+            <ul class="space-y-2">
+              <li>
+                <a href="#" class="text-gray-400 hover:text-white transition"
+                  ><i class="fas fa-external-link-alt mr-2"></i> About</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/NamBZ/youtube-downloader"
+                  class="text-gray-400 hover:text-white transition"
+                  ><i class="fab fa-github mr-2"></i> GitHub</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400"
+        >
+          <p>
+            &copy; <span id="currentYear"></span> YouTube Downloader. All rights
+            reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
 
-                var links = data['links'];
-                var error = data['error'];
+    <script>
+      $(document).ready(function () {
+        // Set current year in footer
+        $("#currentYear").text(new Date().getFullYear());
 
-                if (error) {
-                    alert('Error: ' + error);
-                    return;
-                }
+        // Form submission
+        $("#downloadForm").on("submit", function (e) {
+          e.preventDefault();
 
-                // first link with video
-                var first = links[0];
+          const youtubeUrl = $("#urlInput").val().trim();
+          if (!youtubeUrl) return;
 
-                if (typeof first === 'undefined') {
-                    alert('No video found!');
-                    return;
-                }
+          // Show loading, hide results and errors
+          $("#loadingIndicator").removeClass("hidden");
+          $("#resultsArea").addClass("hidden");
+          $("#errorMessage").addClass("hidden");
+          $("#playerContainer").addClass("hidden");
 
-                var stream_url = 'stream.php?url=' + encodeURIComponent(first);
+          // Disable the button
+          $("#fetchBtn").prop("disabled", true);
 
-                var video = $("video");
-                video.attr('src', stream_url);
-                video[0].load();
-            });
+          // Make AJAX request
+          $.ajax({
+            url: "api.php",
+            type: "GET",
+            data: { url: youtubeUrl },
+            dataType: "json",
+            success: function (response) {
+              $("#loadingIndicator").addClass("hidden");
+              $("#fetchBtn").prop("disabled", false);
 
+              if (response.error) {
+                // Show error
+                $("#errorText").text(response.error);
+                $("#errorMessage").removeClass("hidden");
+                return;
+              }
+
+              // Process successful response
+              const data = response.success;
+              displayVideoInfo(data.info);
+
+              // Process download options
+              processDownloadOptions(data.downloads);
+
+              // Show results area
+              $("#resultsArea").removeClass("hidden");
+
+              // Set up player buttons
+              setupPlayerButtons(data);
+            },
+            error: function () {
+              $("#loadingIndicator").addClass("hidden");
+              $("#fetchBtn").prop("disabled", false);
+              $("#errorText").text(
+                "Failed to connect to the server. Please try again later."
+              );
+              $("#errorMessage").removeClass("hidden");
+            },
+          });
         });
 
-    });
-</script>
+        function displayVideoInfo(info) {
+          $("#videoTitle").text(info.title);
+          $("#channelInfo").html(`
+          <p><strong>Channel:</strong> ${info.channelTitle}</p>
+          <p><strong>Duration:</strong> ${formatDuration(
+            info.durationSeconds
+          )}</p>
+        `);
+          $("#thumbnailContainer").html(
+            `<img src="${info.thumbnail}" class="w-full h-auto rounded" alt="Video thumbnail">`
+          );
+        }
 
-</body>
+        function processDownloadOptions(downloads) {
+          // Video with audio
+          if (downloads.video && downloads.video.length > 0) {
+            $("#videoWithAudioSection").show();
+            let videoWithAudioHtml = "";
+
+            $.each(downloads.video, function (index, item) {
+              videoWithAudioHtml += generateDownloadButton(
+                item.url,
+                `${item.qualityLabel} (${formatFileSize(item.contentLength)})`,
+                "blue"
+              );
+            });
+
+            $("#videoWithAudio").html(videoWithAudioHtml);
+          } else {
+            $("#videoWithAudioSection").hide();
+          }
+
+          // Video only
+          if (downloads.videoNoAudio && downloads.videoNoAudio.length > 0) {
+            $("#videoOnlySection").show();
+            let videoOnlyHtml = "";
+
+            $.each(downloads.videoNoAudio, function (index, item) {
+              videoOnlyHtml += generateDownloadButton(
+                item.url,
+                `${item.qualityLabel} (${formatFileSize(item.contentLength)})`,
+                "red"
+              );
+            });
+
+            $("#videoOnly").html(videoOnlyHtml);
+          } else {
+            $("#videoOnlySection").hide();
+          }
+
+          // Audio only
+          if (downloads.audio && downloads.audio.length > 0) {
+            $("#audioOnlySection").show();
+            let audioOnlyHtml = "";
+
+            $.each(downloads.audio, function (index, item) {
+              audioOnlyHtml += generateDownloadButton(
+                item.url,
+                `Audio M4A (${formatFileSize(item.contentLength)})`,
+                "green"
+              );
+            });
+
+            $("#audioOnly").html(audioOnlyHtml);
+          } else {
+            $("#audioOnlySection").hide();
+          }
+        }
+
+        function generateDownloadButton(url, text, color) {
+          const colorClasses = {
+            blue: "bg-blue-600 hover:bg-blue-700",
+            red: "bg-red-600 hover:bg-red-700",
+            green: "bg-green-600 hover:bg-green-700",
+          };
+
+          return `
+          <a href="${url}" target="_blank" class="${colorClasses[color]} text-white font-medium py-2 px-4 rounded-md transition flex items-center justify-center">
+            <i class="fas fa-download mr-2"></i> ${text}
+          </a>
+        `;
+        }
+
+        function setupPlayerButtons(data) {
+          // Video player button
+          if (data.downloads.video && data.downloads.video.length > 0) {
+            $("#playVideoBtn")
+              .show()
+              .on("click", function () {
+                // Check if we have complete videos
+                if (data.downloads.video && data.downloads.video.length > 0) {
+                  playVideo(
+                    data.info.title,
+                    data.info.thumbnail,
+                    data.downloads.video
+                  );
+                }
+                // If no complete videos but we have video-only and audio streams
+                else if (
+                  data.downloads.videoNoAudio &&
+                  data.downloads.videoNoAudio.length > 0 &&
+                  data.downloads.audio &&
+                  data.downloads.audio.length > 0
+                ) {
+                  // Use the fallback method with separate audio and video
+                  playVideoWithAudioFallback(
+                    data.info.title,
+                    data.info.thumbnail,
+                    data.downloads.videoNoAudio,
+                    data.downloads.audio[0].url
+                  );
+                } else {
+                  // No playable video content available
+                  alert("No playable video content available");
+                }
+                // Setup media session for video
+                setupMediaSession(
+                  data.info.title,
+                  data.info.channelTitle,
+                  "YouTube Video",
+                  data.info.thumbnail
+                );
+              });
+          } else if (
+            data.downloads.videoNoAudio &&
+            data.downloads.videoNoAudio.length > 0 &&
+            data.downloads.audio &&
+            data.downloads.audio.length > 0
+          ) {
+            // Show the play button if we can combine video-only and audio
+            $("#playVideoBtn")
+              .show()
+              .on("click", function () {
+                playVideoWithAudioFallback(
+                  data.info.title,
+                  data.info.thumbnail,
+                  data.downloads.videoNoAudio,
+                  data.downloads.audio[0].url
+                );
+                // Setup media session for video
+                setupMediaSession(
+                  data.info.title,
+                  data.info.channelTitle,
+                  "YouTube Video",
+                  data.info.thumbnail
+                );
+              });
+          } else {
+            $("#playVideoBtn").hide();
+          }
+
+          // Audio player button
+          if (data.downloads.audio && data.downloads.audio.length > 0) {
+            $("#playAudioBtn")
+              .show()
+              .on("click", function () {
+                playAudio(
+                  data.info.title,
+                  data.info.thumbnail,
+                  data.downloads.audio[0].url
+                );
+
+                // Setup media session for audio
+                setupMediaSession(
+                  data.info.title,
+                  data.info.channelTitle,
+                  "YouTube Audio",
+                  data.info.thumbnail
+                );
+              });
+          } else {
+            $("#playAudioBtn").hide();
+          }
+        }
+
+        function playVideo(title, poster, videos) {
+          // Create sources array for Plyr
+          const sources = videos.map(function (video) {
+            return {
+              src: "stream.php?url=" + encodeURIComponent(video.url),
+              type: "video/mp4",
+              size: parseInt(video.height),
+            };
+          });
+
+          // Sort by resolution (highest first)
+          sources.sort((a, b) => b.size - a.size);
+
+          // Create video element
+          $("#player").html("<video controls crossorigin playsinline></video>");
+          $("#playerContainer").removeClass("hidden");
+
+          // Initialize Plyr
+          const player = new Plyr("video", {
+            title: title,
+            captions: { active: true, update: true },
+            quality: {
+              default: sources[0].size,
+              options: sources.map((s) => s.size),
+            },
+          });
+
+          // Set source
+          player.source = {
+            type: "video",
+            title: title,
+            poster: poster,
+            sources: sources,
+          };
+
+          // Scroll to player
+          $("html, body").animate(
+            {
+              scrollTop: $("#playerContainer").offset().top - 20,
+            },
+            500
+          );
+        }
+
+        function playVideoWithAudioFallback(title, poster, videos, audioUrl) {
+          // Create sources array for Plyr
+          const sources = videos.map(function (video) {
+            return {
+              src: "stream.php?url=" + encodeURIComponent(video.url),
+              type: "video/mp4",
+              size: parseInt(video.height),
+            };
+          });
+
+          // Sort by resolution (highest first)
+          sources.sort((a, b) => b.size - a.size);
+
+          // Create video element with a message explaining the situation
+          $("#player").html(`
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-info-circle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">
+                    This video doesn't have a combined audio+video stream. Using separate audio and video streams.
+                    Some browsers might not play both simultaneously.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <video controls crossorigin playsinline></video>
+            <audio id="audioSource" crossorigin playsinline style="display:none"></audio>
+          `);
+          $("#playerContainer").removeClass("hidden");
+
+          // Initialize Plyr for video
+          const player = new Plyr("video", {
+            title: title,
+            captions: { active: true, update: true },
+            quality: {
+              default: sources[0].size,
+              options: sources.map((s) => s.size),
+            },
+          });
+
+          // Set source for video
+          player.source = {
+            type: "video",
+            title: title,
+            poster: poster,
+            sources: sources,
+          };
+
+          // Set up audio element with the audio URL
+          const audioElement = document.getElementById("audioSource");
+          audioElement.src = "stream.php?url=" + encodeURIComponent(audioUrl);
+
+          // Sync audio playback with video
+          player.on("play", () => {
+            audioElement
+              .play()
+              .catch((e) => console.error("Audio play error:", e));
+            audioElement.currentTime = player.currentTime;
+          });
+
+          player.on("pause", () => {
+            audioElement.pause();
+          });
+
+          player.on("seeking", () => {
+            audioElement.currentTime = player.currentTime;
+          });
+
+          player.on("volumechange", () => {
+            audioElement.volume = player.volume;
+            audioElement.muted = player.muted;
+          });
+
+          player.on("ratechange", () => {
+            audioElement.playbackRate = player.speed;
+          });
+
+          // Scroll to player
+          $("html, body").animate(
+            {
+              scrollTop: $("#playerContainer").offset().top - 20,
+            },
+            500
+          );
+        }
+
+        function playAudio(title, poster, audioUrl) {
+          // Create audio element
+          $("#player").html(`
+          <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-1/3 mb-4 md:mb-0">
+              <img src="${poster}" class="w-full h-auto rounded" alt="Audio thumbnail">
+            </div>
+            <div class="md:w-2/3 md:pl-6">
+              <h3 class="text-xl font-bold mb-4">${title}</h3>
+              <audio controls crossorigin playsinline class="w-full"></audio>
+            </div>
+          </div>
+        `);
+          $("#playerContainer").removeClass("hidden");
+
+          // Initialize Plyr
+          const player = new Plyr("audio");
+
+          // Set source
+          player.source = {
+            type: "audio",
+            title: title,
+            sources: [
+              {
+                src: "stream.php?url=" + encodeURIComponent(audioUrl),
+                type: "audio/mp4",
+              },
+            ],
+          };
+
+          // Scroll to player
+          $("html, body").animate(
+            {
+              scrollTop: $("#playerContainer").offset().top - 20,
+            },
+            500
+          );
+        }
+
+        // Utility Functions
+        function formatFileSize(bytes, decimals = 2) {
+          if (!bytes) return "0 Bytes";
+
+          const k = 1024;
+          const dm = decimals < 0 ? 0 : decimals;
+          const sizes = [
+            "Bytes",
+            "KB",
+            "MB",
+            "GB",
+            "TB",
+            "PB",
+            "EB",
+            "ZB",
+            "YB",
+          ];
+
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+          return (
+            parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i]
+          );
+        }
+
+        function formatDuration(seconds) {
+          if (!seconds) return "00:00";
+
+          const hrs = Math.floor(seconds / 3600);
+          const mins = Math.floor((seconds % 3600) / 60);
+          const secs = seconds % 60;
+
+          let result = "";
+          if (hrs > 0) {
+            result += `${hrs}:${mins < 10 ? "0" : ""}`;
+          }
+
+          result += `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+
+          return result;
+        }
+
+        function setupMediaSession(title, artist, album, poster) {
+          if ("mediaSession" in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: title,
+              artist: artist,
+              album: album,
+              artwork: [
+                {
+                  src: poster,
+                  sizes: "512x512",
+                  type: "image/png",
+                },
+              ],
+            });
+          }
+        }
+      });
+    </script>
+  </body>
 </html>
-

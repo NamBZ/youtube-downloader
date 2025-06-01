@@ -35,13 +35,13 @@ We are not responsible for people who attempt to use this program in any way tha
 Recommended way of installing this is via [Composer](http://getcomposer.org):
 
 ```bash
-composer require kclauhk/youtube-downloader
+composer require NamBZ/youtube-downloader
 ```
 
 For pure PHP version:
 
 ```bash
-composer require kclauhk/youtube-downloader "4.1.0"
+composer require NamBZ/youtube-downloader "4.1.0"
 ```
 
 ## Changes in this fork
@@ -71,7 +71,7 @@ You can add additional clients/modify the built-in clients by:
   ```
   (client which requires PO token is not supported)
 
-### Changes since [v4.1.0](https://github.com/kclauhk/youtube-downloader/releases/tag/v4.1.0)
+### Changes since [v4.1.0](https://github.com/NamBZ/youtube-downloader/releases/tag/v4.1.0)
 - Two YouTube clients (client ID: "android_vr" and "ios") are built into YouTubeDownloader
   - To specify a client
     ```

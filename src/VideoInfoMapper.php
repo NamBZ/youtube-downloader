@@ -15,9 +15,21 @@ class VideoInfoMapper
 
         $result = new VideoInfo();
 
+        $thumbnails = Utils::arrayGet($videoDetails, 'thumbnail.thumbnails', []);
+        $thumbnail_url = null;
+        $thumb_max_width = 0;
+
+        foreach ($thumbnails as $thumbnail) {
+            if ($thumbnail['width'] > $thumb_max_width) {
+                $thumbnail_url = $thumbnail['url'];
+                $thumb_max_width = $thumbnail['width'];
+            }
+        }
+
         $result->id = Utils::arrayGet($videoDetails, 'videoId');
         $result->title = Utils::arrayGet($videoDetails, 'title');
         $result->description = Utils::arrayGet($videoDetails, 'shortDescription');
+        $result->thumbnail = $thumbnail_url;
 
         $result->channelId = Utils::arrayGet($videoDetails, 'channelId');
         $result->channelTitle = Utils::arrayGet($videoDetails, 'author');
